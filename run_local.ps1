@@ -4,6 +4,10 @@ param(
     [string]$CorsOrigins = "*",
     [ValidateSet("true", "false")]
     [string]$EnableTakeoutImport = "true",
+    [ValidateSet("true", "false")]
+    [string]$EnableSelfRestart = "false",
+    [string]$SelfRestartToken = "",
+    [double]$SelfRestartDelaySeconds = 0.6,
     [string]$BindHost = "127.0.0.1",
     [int]$Port = 8000,
     [switch]$SkipCompose,
@@ -53,12 +57,22 @@ $env:DATABASE_URL = $DatabaseUrl
 $env:REDIS_URL = $RedisUrl
 $env:CORS_ORIGINS = $CorsOrigins
 $env:ENABLE_TAKEOUT_IMPORT = $EnableTakeoutImport.ToLowerInvariant()
+$env:ENABLE_SELF_RESTART = $EnableSelfRestart.ToLowerInvariant()
+$env:SELF_RESTART_TOKEN = $SelfRestartToken
+$env:SELF_RESTART_DELAY_SECONDS = [string]$SelfRestartDelaySeconds
 
 Write-Step "Environment configured:"
 Write-Host "  DATABASE_URL=$($env:DATABASE_URL)"
 Write-Host "  REDIS_URL=$($env:REDIS_URL)"
 Write-Host "  CORS_ORIGINS=$($env:CORS_ORIGINS)"
 Write-Host "  ENABLE_TAKEOUT_IMPORT=$($env:ENABLE_TAKEOUT_IMPORT)"
+Write-Host "  ENABLE_SELF_RESTART=$($env:ENABLE_SELF_RESTART)"
+if ([string]::IsNullOrWhiteSpace($env:SELF_RESTART_TOKEN)) {
+    Write-Host "  SELF_RESTART_TOKEN=<empty>"
+} else {
+    Write-Host "  SELF_RESTART_TOKEN=<set>"
+}
+Write-Host "  SELF_RESTART_DELAY_SECONDS=$($env:SELF_RESTART_DELAY_SECONDS)"
 
 if ($NoRun) {
     Write-Step "Setup complete (NoRun enabled)."

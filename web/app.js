@@ -358,6 +358,7 @@ function bindControls() {
   const saveBaseBtn = byId("saveBaseBtn");
   const healthBtn = byId("healthBtn");
   const redisBtn = byId("redisBtn");
+  const restartBtn = byId("restartBtn");
   const channelForm = byId("channelForm");
   const videoForm = byId("videoForm");
   const interactionForm = byId("interactionForm");
@@ -441,6 +442,23 @@ function bindControls() {
       setOutput(systemOutput, await request("GET", "/redis-ping"));
     } catch (err) {
       setErrorOutput(systemOutput, `Redis check failed: ${safeErrorMessage(err)}`);
+    }
+  });
+
+  restartBtn.addEventListener("click", async () => {
+    clearGlobalError();
+    restartBtn.disabled = true;
+    setOutput(systemOutput, "Requesting API restart...");
+    try {
+      const data = await request("POST", "/admin/restart");
+      setOutput(systemOutput, data);
+      setConnectionStatus(connectionStatus, null, "restart requested");
+    } catch (err) {
+      setErrorOutput(systemOutput, `Restart failed: ${safeErrorMessage(err)}`);
+    } finally {
+      window.setTimeout(() => {
+        restartBtn.disabled = false;
+      }, 1200);
     }
   });
 

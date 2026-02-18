@@ -23,6 +23,9 @@ class Settings(BaseSettings):
     cors_origins: Annotated[list[str], NoDecode] = Field(default_factory=lambda: ["*"], alias="CORS_ORIGINS")
     youtube_api_key: str | None = Field(default=None, alias="YOUTUBE_API_KEY")
     enable_takeout_import: bool = Field(default=True, alias="ENABLE_TAKEOUT_IMPORT")
+    enable_self_restart: bool = Field(default=False, alias="ENABLE_SELF_RESTART")
+    self_restart_token: str | None = Field(default=None, alias="SELF_RESTART_TOKEN")
+    self_restart_delay_seconds: float = Field(default=0.6, alias="SELF_RESTART_DELAY_SECONDS")
 
     recommendation_cache_ttl_seconds: int = 1800
     api_cache_ttl_seconds: int = 300

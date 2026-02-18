@@ -52,6 +52,9 @@ README.md
   - Local quick value: `*` or `["*"]`
 - `YOUTUBE_API_KEY` (optional; used by future ingest workflow)
 - `ENABLE_TAKEOUT_IMPORT` (optional, default `true`; set `false` to disable all Takeout import endpoints)
+- `ENABLE_SELF_RESTART` (optional, default `false`; enables API restart endpoint)
+- `SELF_RESTART_TOKEN` (optional; required header value for restart endpoint when set)
+- `SELF_RESTART_DELAY_SECONDS` (optional, default `0.6`; short delay before process restarts)
 
 ## Local Setup
 
@@ -118,6 +121,7 @@ Optional flags:
 - `.\run_local.ps1 -SkipInstall` (if dependencies already installed)
 - `.\run_local.ps1 -NoRun` (setup only, do not start API)
 - `.\run_local.ps1 -EnableTakeoutImport false` (disable Takeout import endpoints)
+- `.\run_local.ps1 -EnableSelfRestart true -SelfRestartToken "<secret>"` (enable restart endpoint)
 
 ## Replicate Setup (Windows PowerShell)
 
@@ -196,6 +200,7 @@ In PowerShell, prefer `Invoke-RestMethod` for JSON POSTs. `curl.exe -d` often ne
 - `POST /interactions`
 - `GET /recommendations?user_id=<id>&k=20`
 - `POST /cache/clear?user_id=<id>`
+- `POST /admin/restart` (disabled by default; enable with `ENABLE_SELF_RESTART=true`)
 - `POST /ingest/google-takeout` (JSON body import)
 - `POST /ingest/google-takeout/file?user_id=<id>&source_file=<name>` (raw JSON file import)
 - `POST /ingest/google-takeout/zip?user_id=<id>&source_file=<name>` (raw ZIP import; auto-selects relevant JSON files)
@@ -211,6 +216,7 @@ The UI supports:
 - step-by-step layout (Verify API -> Upload Takeout -> Optional manual data -> Recommendations)
 - prominent Google Takeout upload card (JSON and ZIP, optional)
 - one-click `Load Demo Data` path (no Takeout required)
+- `Restart API` button in Step 1 (works when `ENABLE_SELF_RESTART=true`)
 - top toggle buttons to switch between `Use Quick Demo (No Takeout)` and `Use Google Takeout`
 - optional manual data-entry forms hidden under expandable sections
 - recommendation retrieval + recommendation history table
@@ -352,6 +358,18 @@ Import full Google Takeout ZIP directly:
 curl -X POST "http://127.0.0.1:8000/ingest/google-takeout/zip?user_id=user-123&source_file=takeout-2026-02-17.zip" \
   -H "Content-Type: application/zip" \
   --data-binary "@takeout-2026-02-17.zip"
+```
+
+Restart API process (when enabled):
+```powershell
+$env:ENABLE_SELF_RESTART="true"
+$env:SELF_RESTART_TOKEN="change-me"
+Invoke-RestMethod -Method Post -Uri "http://127.0.0.1:8000/admin/restart" -Headers @{ "X-Restart-Token" = "change-me" }
+```
+
+Bearer token variant:
+```powershell
+Invoke-RestMethod -Method Post -Uri "http://127.0.0.1:8000/admin/restart" -Headers @{ "Authorization" = "Bearer change-me" }
 ```
 
 ## How Recommendations Work

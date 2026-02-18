@@ -1,10 +1,14 @@
 from __future__ import annotations
 
 import logging
+import os
 from pathlib import Path
+import sys
+import threading
+import time
 from typing import Annotated
 
-from fastapi import Depends, FastAPI, HTTPException, Query, Request
+from fastapi import Depends, FastAPI, HTTPException, Header, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from redis import Redis
@@ -59,6 +63,18 @@ def ensure_takeout_import_enabled() -> None:
         raise HTTPException(status_code=404, detail="Google Takeout import is disabled by configuration.")
 
 
+def _restart_current_process(delay_seconds: float) -> None:
+    time.sleep(max(delay_seconds, 0.0))
+    args = [sys.executable, *sys.argv]
+    logger.warning("Restarting process via execv: %s", " ".join(args))
+    os.execv(sys.executable, args)
+
+
+def schedule_process_restart(delay_seconds: float) -> None:
+    thread = threading.Thread(target=_restart_current_process, args=(delay_seconds,), daemon=True)
+    thread.start()
+
+
 @app.on_event("startup")
 def on_startup() -> None:
     try:
@@ -90,6 +106,31 @@ def redis_ping(redis: RedisDep) -> dict[str, bool]:
         return {"redis": bool(redis.ping())}
     except RedisError as exc:
         raise HTTPException(status_code=503, detail=f"Redis unavailable: {exc}") from exc
+
+
+@app.post("/admin/restart")
+def restart_server(
+    x_restart_token: str | None = Header(default=None),
+    authorization: str | None = Header(default=None),
+) -> dict[str, str]:
+    if not settings.enable_self_restart:
+        raise HTTPException(
+            status_code=403,
+            detail="Self restart is disabled. Set ENABLE_SELF_RESTART=true to enable this endpoint.",
+        )
+
+    provided_token = x_restart_token
+    if not provided_token and authorization and authorization.lower().startswith("bearer "):
+        provided_token = authorization[7:].strip()
+
+    if settings.self_restart_token and provided_token != settings.self_restart_token:
+        raise HTTPException(status_code=401, detail="Invalid restart token.")
+
+    schedule_process_restart(settings.self_restart_delay_seconds)
+    return {
+        "status": "accepted",
+        "message": "Restart scheduled.",
+    }
 
 
 @app.post("/channels/upsert", response_model=schemas.ChannelOut)
