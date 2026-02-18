@@ -1,10 +1,10 @@
 from __future__ import annotations
 
 from functools import lru_cache
-from typing import Any
+from typing import Annotated, Any
 
 from pydantic import Field, field_validator
-from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
 
 class Settings(BaseSettings):
@@ -20,7 +20,7 @@ class Settings(BaseSettings):
         alias="DATABASE_URL",
     )
     redis_url: str = Field(default="redis://localhost:6379/0", alias="REDIS_URL")
-    cors_origins: list[str] = Field(default_factory=lambda: ["*"], alias="CORS_ORIGINS")
+    cors_origins: Annotated[list[str], NoDecode] = Field(default_factory=lambda: ["*"], alias="CORS_ORIGINS")
     youtube_api_key: str | None = Field(default=None, alias="YOUTUBE_API_KEY")
     enable_takeout_import: bool = Field(default=True, alias="ENABLE_TAKEOUT_IMPORT")
 
