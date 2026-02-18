@@ -16,20 +16,22 @@
         <p class="eyebrow">Recommendation Engine</p>
         <h1>YouTube Recs Control Panel</h1>
         <p class="subhead">
-          Operate ingestion, interaction logging, and recommendation retrieval from one interface.
+          Follow the steps below. Start with Google Takeout upload, then fetch recommendations.
         </p>
         <div class="api-base">
           <label for="apiBase">API Base URL</label>
           <input id="apiBase" type="text" value="" placeholder="http://127.0.0.1:8000" />
           <label for="apiToken">Bearer Token (optional)</label>
           <input id="apiToken" type="password" value="" placeholder="token-for-auth-ready-apis" />
-          <button id="saveBaseBtn" type="button">Save</button>
+          <button id="saveBaseBtn" type="button">Save API Settings</button>
         </div>
+        <p id="connectionStatus" class="status-pill">Status: unknown</p>
       </header>
 
       <section class="grid">
         <article class="card reveal">
-          <h2>System Checks</h2>
+          <h2>Step 1: Verify API</h2>
+          <p class="hint">Run these checks before ingesting or fetching recommendations.</p>
           <div class="actions">
             <button id="healthBtn" type="button">Check Health</button>
             <button id="redisBtn" type="button">Check Redis</button>
@@ -37,76 +39,90 @@
           <pre id="systemOutput" class="output"></pre>
         </article>
 
-        <article class="card reveal">
-          <h2>Channel Upsert</h2>
-          <form id="channelForm">
-            <label>Channel ID <input name="channel_id" required /></label>
-            <label>Title <input name="title" required /></label>
-            <button type="submit">Upsert Channel</button>
-          </form>
-          <pre id="channelOutput" class="output"></pre>
-        </article>
-
-        <article class="card reveal">
-          <h2>Video Upsert</h2>
-          <form id="videoForm">
-            <label>Video ID <input name="video_id" required /></label>
-            <label>Channel ID <input name="channel_id" required /></label>
-            <label>Title <input name="title" required /></label>
-            <label>Description <textarea name="description" rows="3"></textarea></label>
-            <label>Tags (comma-separated) <input name="tags" /></label>
-            <label>Duration Seconds <input name="duration_seconds" type="number" min="0" /></label>
-            <button type="submit">Upsert Video</button>
-          </form>
-          <pre id="videoOutput" class="output"></pre>
-        </article>
-
-        <article class="card reveal">
-          <h2>Log Interaction</h2>
-          <form id="interactionForm">
-            <label>User ID <input name="user_id" required /></label>
-            <label>Video ID <input name="video_id" required /></label>
-            <label>
-              Event Type
-              <select name="event_type">
-                <option value="watch">watch</option>
-                <option value="click">click</option>
-                <option value="like">like</option>
-                <option value="skip">skip</option>
-              </select>
+        <article class="card wide takeout-card reveal">
+          <h2>Step 2: Upload Google Takeout (JSON or ZIP)</h2>
+          <p class="hint">
+            This is the main ingestion path. If Takeout import is disabled on backend, this card will show the reason.
+          </p>
+          <form id="takeoutForm" class="takeout-form">
+            <div class="takeout-grid">
+              <label>User ID <input name="user_id" required value="AbhiKanani07" /></label>
+              <label>Source File Label <input name="source_file" placeholder="takeout.zip" /></label>
+              <label>
+                File Type
+                <select name="file_type">
+                  <option value="zip">zip</option>
+                  <option value="json">json</option>
+                </select>
+              </label>
+            </div>
+            <label class="file-drop">
+              <span>Select JSON/ZIP file</span>
+              <input name="file" type="file" accept=".json,.zip" required />
             </label>
-            <label>Watch Seconds <input name="watch_seconds" type="number" min="0" /></label>
-            <button type="submit">Log Interaction</button>
-          </form>
-          <pre id="interactionOutput" class="output"></pre>
-        </article>
-
-        <article class="card reveal">
-          <h2>Takeout Import</h2>
-          <form id="takeoutForm">
-            <label>User ID <input name="user_id" required value="AbhiKanani07" /></label>
-            <label>Source File Label <input name="source_file" placeholder="takeout.zip" /></label>
-            <label>
-              File Type
-              <select name="file_type">
-                <option value="zip">zip</option>
-                <option value="json">json</option>
-              </select>
-            </label>
-            <label>Select File <input name="file" type="file" accept=".json,.zip" required /></label>
             <button type="submit">Import Takeout File</button>
           </form>
           <pre id="takeoutOutput" class="output"></pre>
         </article>
 
+        <article class="card reveal">
+          <h2>Step 3: Manual Data Entry (Optional)</h2>
+          <p class="hint">Use these only when you want to create or test data without Takeout files.</p>
+
+          <details>
+            <summary>Channel Upsert</summary>
+            <form id="channelForm">
+              <label>Channel ID <input name="channel_id" required /></label>
+              <label>Title <input name="title" required /></label>
+              <button type="submit">Upsert Channel</button>
+            </form>
+            <pre id="channelOutput" class="output"></pre>
+          </details>
+
+          <details>
+            <summary>Video Upsert</summary>
+            <form id="videoForm">
+              <label>Video ID <input name="video_id" required /></label>
+              <label>Channel ID <input name="channel_id" required /></label>
+              <label>Title <input name="title" required /></label>
+              <label>Description <textarea name="description" rows="3"></textarea></label>
+              <label>Tags (comma-separated) <input name="tags" /></label>
+              <label>Duration Seconds <input name="duration_seconds" type="number" min="0" /></label>
+              <button type="submit">Upsert Video</button>
+            </form>
+            <pre id="videoOutput" class="output"></pre>
+          </details>
+
+          <details>
+            <summary>Log Interaction</summary>
+            <form id="interactionForm">
+              <label>User ID <input name="user_id" required /></label>
+              <label>Video ID <input name="video_id" required /></label>
+              <label>
+                Event Type
+                <select name="event_type">
+                  <option value="watch">watch</option>
+                  <option value="click">click</option>
+                  <option value="like">like</option>
+                  <option value="skip">skip</option>
+                </select>
+              </label>
+              <label>Watch Seconds <input name="watch_seconds" type="number" min="0" /></label>
+              <button type="submit">Log Interaction</button>
+            </form>
+            <pre id="interactionOutput" class="output"></pre>
+          </details>
+        </article>
+
         <article class="card wide reveal">
-          <h2>Get Recommendations</h2>
+          <h2>Step 4: Get Recommendations</h2>
           <form id="recommendationForm" class="inline-form">
             <label>User ID <input name="user_id" required value="AbhiKanani07" /></label>
             <label>K <input name="k" type="number" min="1" max="100" value="20" /></label>
-            <button type="submit">Fetch</button>
+            <button type="submit">Fetch Recommendations</button>
           </form>
           <div id="recommendationList" class="rec-list"></div>
+
           <div class="history-head">
             <h3>Recommendation History</h3>
             <button id="clearHistoryBtn" type="button">Clear History</button>

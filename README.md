@@ -208,14 +208,12 @@ The backend now serves a control panel UI at:
 - `http://127.0.0.1:8000/ui`
 
 The UI supports:
-- health + redis checks
-- channel/video upsert
-- interaction logging
-- recommendation retrieval and display
+- step-by-step layout (Verify API -> Upload Takeout -> Optional manual data -> Recommendations)
+- prominent Google Takeout upload card (JSON and ZIP)
+- optional manual data-entry forms hidden under expandable sections
+- recommendation retrieval + recommendation history table
 - API base URL override (saved to localStorage)
 - optional bearer token input (sent as `Authorization: Bearer <token>`)
-- Takeout import panel for JSON and ZIP file uploads
-- recommendation history table (stored in browser localStorage)
 
 ## UI Walkthrough (Replicate Exactly)
 
@@ -252,10 +250,14 @@ $env:ENABLE_TAKEOUT_IMPORT="false"
 - results appear in recommendation cards
 - each fetch is added to the history table below
 
-7. Optional Takeout import:
-- enable backend env `ENABLE_TAKEOUT_IMPORT=true` before starting server
-- in `Takeout Import` card, set `File Type` to `json` or `zip`
-- choose file and click `Import Takeout File`
+7. Google Takeout upload location:
+- In the UI, the second card is `Step 2: Upload Google Takeout (JSON or ZIP)`.
+- Set `File Type` (`json` or `zip`), choose file, then click `Import Takeout File`.
+- If you see a disabled message, restart backend with:
+
+```powershell
+$env:ENABLE_TAKEOUT_IMPORT="true"
+```
 
 ### cURL Examples
 

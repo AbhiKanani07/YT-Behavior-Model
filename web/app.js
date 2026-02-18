@@ -28,6 +28,17 @@ function setOutput(el, payload) {
   el.textContent = JSON.stringify(payload, null, 2);
 }
 
+function setConnectionStatus(el, ok, message) {
+  if (!el) return;
+  el.classList.remove("ok", "bad");
+  if (ok === true) {
+    el.classList.add("ok");
+  } else if (ok === false) {
+    el.classList.add("bad");
+  }
+  el.textContent = `Status: ${message}`;
+}
+
 function buildHeaders(contentType) {
   const headers = {};
   if (contentType) {
@@ -182,6 +193,7 @@ function bindControls() {
   const takeoutForm = document.querySelector("#takeoutForm");
   const recommendationForm = document.querySelector("#recommendationForm");
   const clearHistoryBtn = document.querySelector("#clearHistoryBtn");
+  const connectionStatus = document.querySelector("#connectionStatus");
 
   const systemOutput = document.querySelector("#systemOutput");
   const channelOutput = document.querySelector("#channelOutput");
@@ -208,13 +220,17 @@ function bindControls() {
       apiBase: state.apiBase,
       auth: state.apiToken ? "Bearer token configured" : "No token",
     });
+    setConnectionStatus(connectionStatus, null, "saved, run Check Health");
   });
 
   healthBtn.addEventListener("click", async () => {
     try {
-      setOutput(systemOutput, await request("GET", "/health"));
+      const data = await request("GET", "/health");
+      setOutput(systemOutput, data);
+      setConnectionStatus(connectionStatus, data?.status === "ok", data?.status || "unknown");
     } catch (err) {
       setOutput(systemOutput, `Health check failed: ${err.message}`);
+      setConnectionStatus(connectionStatus, false, "health check failed");
     }
   });
 
@@ -310,7 +326,15 @@ function bindControls() {
       }
       setOutput(takeoutOutput, response);
     } catch (err) {
-      setOutput(takeoutOutput, `Takeout import failed: ${err.message}`);
+      const message = String(err.message || "");
+      if (message.includes("disabled by configuration")) {
+        setOutput(
+          takeoutOutput,
+          "Takeout import is disabled on backend. Start API with ENABLE_TAKEOUT_IMPORT=true to use this feature.",
+        );
+      } else {
+        setOutput(takeoutOutput, `Takeout import failed: ${message}`);
+      }
     }
   });
 
@@ -340,6 +364,8 @@ function bindControls() {
     saveHistory();
     renderHistory(historyTableBody);
   });
+
+  healthBtn.click();
 }
 
 bindControls();
