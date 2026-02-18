@@ -6,6 +6,69 @@ const state = {
   history: [],
 };
 
+const DEMO_CHANNELS = [
+  { channel_id: "UC_ML_01", title: "ML Core" },
+  { channel_id: "UC_ML_02", title: "Data Infra" },
+];
+
+const DEMO_VIDEOS = [
+  {
+    video_id: "VID_ML_001",
+    channel_id: "UC_ML_01",
+    title: "Intro to Recommender Systems",
+    description: "Overview of collaborative and content based methods.",
+    tags: ["recommender", "ml", "intro"],
+    duration_seconds: 600,
+  },
+  {
+    video_id: "VID_ML_002",
+    channel_id: "UC_ML_01",
+    title: "TF-IDF for Content Ranking",
+    description: "Using tfidf vectors for ranking videos.",
+    tags: ["tfidf", "nlp", "ranking"],
+    duration_seconds: 720,
+  },
+  {
+    video_id: "VID_ML_003",
+    channel_id: "UC_ML_01",
+    title: "Cosine Similarity Explained",
+    description: "Vector similarity for recommendation and retrieval.",
+    tags: ["cosine", "vectors", "ml"],
+    duration_seconds: 540,
+  },
+  {
+    video_id: "VID_ML_004",
+    channel_id: "UC_ML_02",
+    title: "FastAPI Production Patterns",
+    description: "Production backend patterns and deployment strategy.",
+    tags: ["fastapi", "backend", "deploy"],
+    duration_seconds: 800,
+  },
+  {
+    video_id: "VID_ML_005",
+    channel_id: "UC_ML_02",
+    title: "Postgres Indexing Deep Dive",
+    description: "Database indexing strategies for low-latency systems.",
+    tags: ["postgres", "database", "indexing"],
+    duration_seconds: 900,
+  },
+  {
+    video_id: "VID_ML_006",
+    channel_id: "UC_ML_02",
+    title: "Redis Caching for APIs",
+    description: "Cache patterns and invalidation techniques.",
+    tags: ["redis", "cache", "api"],
+    duration_seconds: 670,
+  },
+];
+
+const DEMO_INTERACTIONS = [
+  { video_id: "VID_ML_001", event_type: "watch", watch_seconds: 420 },
+  { video_id: "VID_ML_002", event_type: "watch", watch_seconds: 510 },
+  { video_id: "VID_ML_003", event_type: "like", watch_seconds: null },
+  { video_id: "VID_ML_006", event_type: "click", watch_seconds: null },
+];
+
 function resolveBaseUrl() {
   const stored = localStorage.getItem("apiBase");
   if (stored && stored.trim()) {
@@ -181,6 +244,30 @@ async function readFileArrayBuffer(file) {
   return await file.arrayBuffer();
 }
 
+async function loadDemoData(userId) {
+  for (const channel of DEMO_CHANNELS) {
+    await request("POST", "/channels/upsert", channel);
+  }
+  for (const video of DEMO_VIDEOS) {
+    await request("POST", "/videos/upsert", video);
+  }
+  for (const event of DEMO_INTERACTIONS) {
+    await request("POST", "/interactions", {
+      user_id: userId,
+      video_id: event.video_id,
+      event_type: event.event_type,
+      watch_seconds: event.watch_seconds,
+      metadata: { source: "ui_demo_seed" },
+    });
+  }
+  return {
+    channels_upserted: DEMO_CHANNELS.length,
+    videos_upserted: DEMO_VIDEOS.length,
+    interactions_logged: DEMO_INTERACTIONS.length,
+    user_id: userId,
+  };
+}
+
 function bindControls() {
   const apiBaseInput = document.querySelector("#apiBase");
   const apiTokenInput = document.querySelector("#apiToken");
@@ -191,6 +278,7 @@ function bindControls() {
   const videoForm = document.querySelector("#videoForm");
   const interactionForm = document.querySelector("#interactionForm");
   const takeoutForm = document.querySelector("#takeoutForm");
+  const demoForm = document.querySelector("#demoForm");
   const recommendationForm = document.querySelector("#recommendationForm");
   const clearHistoryBtn = document.querySelector("#clearHistoryBtn");
   const connectionStatus = document.querySelector("#connectionStatus");
@@ -200,6 +288,7 @@ function bindControls() {
   const videoOutput = document.querySelector("#videoOutput");
   const interactionOutput = document.querySelector("#interactionOutput");
   const takeoutOutput = document.querySelector("#takeoutOutput");
+  const demoOutput = document.querySelector("#demoOutput");
   const recommendationList = document.querySelector("#recommendationList");
   const historyTableBody = document.querySelector("#historyTableBody");
 
@@ -335,6 +424,42 @@ function bindControls() {
       } else {
         setOutput(takeoutOutput, `Takeout import failed: ${message}`);
       }
+    }
+  });
+
+  demoForm.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const formData = new FormData(demoForm);
+    const userId = String(formData.get("user_id") || "").trim();
+    const recUserInput = recommendationForm.querySelector("input[name='user_id']");
+    const recKInput = recommendationForm.querySelector("input[name='k']");
+    const k = parseMaybeInt(recKInput ? recKInput.value : "20") || 20;
+    setOutput(demoOutput, "Loading demo dataset...");
+    try {
+      const summary = await loadDemoData(userId);
+      const recData = await request(
+        "GET",
+        `/recommendations?user_id=${encodeURIComponent(userId)}&k=${k}`,
+      );
+      renderRecommendations(recommendationList, recData);
+      addHistoryEntry({
+        timestamp: new Date().toISOString(),
+        user_id: userId,
+        k,
+        item_count: Array.isArray(recData?.items) ? recData.items.length : 0,
+        top_video_id: recData?.items?.[0]?.video_id || null,
+      });
+      renderHistory(historyTableBody);
+      setOutput(demoOutput, {
+        status: "ok",
+        ...summary,
+        recommendations_fetched: Array.isArray(recData?.items) ? recData.items.length : 0,
+      });
+      if (recUserInput) {
+        recUserInput.value = userId;
+      }
+    } catch (err) {
+      setOutput(demoOutput, `Demo load failed: ${err.message}`);
     }
   });
 

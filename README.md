@@ -209,7 +209,8 @@ The backend now serves a control panel UI at:
 
 The UI supports:
 - step-by-step layout (Verify API -> Upload Takeout -> Optional manual data -> Recommendations)
-- prominent Google Takeout upload card (JSON and ZIP)
+- prominent Google Takeout upload card (JSON and ZIP, optional)
+- one-click `Load Demo Data` path (no Takeout required)
 - optional manual data-entry forms hidden under expandable sections
 - recommendation retrieval + recommendation history table
 - API base URL override (saved to localStorage)
@@ -250,7 +251,7 @@ $env:ENABLE_TAKEOUT_IMPORT="false"
 - results appear in recommendation cards
 - each fetch is added to the history table below
 
-7. Google Takeout upload location:
+7. Path A (optional): Google Takeout upload
 - In the UI, the second card is `Step 2: Upload Google Takeout (JSON or ZIP)`.
 - Set `File Type` (`json` or `zip`), choose file, then click `Import Takeout File`.
 - If you see a disabled message, restart backend with:
@@ -258,6 +259,14 @@ $env:ENABLE_TAKEOUT_IMPORT="false"
 ```powershell
 $env:ENABLE_TAKEOUT_IMPORT="true"
 ```
+
+8. Path B (recommended for quick testing, no Takeout needed):
+- In the UI, use `Step 2B: Quick Demo Data (No Takeout)`.
+- Enter a user id and click `Load Demo Data`.
+- The UI will:
+  - upsert demo channels/videos
+  - log demo interactions
+  - auto-fetch recommendations
 
 ### cURL Examples
 

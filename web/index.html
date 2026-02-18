@@ -16,7 +16,7 @@
         <p class="eyebrow">Recommendation Engine</p>
         <h1>YouTube Recs Control Panel</h1>
         <p class="subhead">
-          Follow the steps below. Start with Google Takeout upload, then fetch recommendations.
+          Two onboarding paths: import Google Takeout (optional) or seed demo data instantly (no Takeout).
         </p>
         <div class="api-base">
           <label for="apiBase">API Base URL</label>
@@ -40,9 +40,9 @@
         </article>
 
         <article class="card wide takeout-card reveal">
-          <h2>Step 2: Upload Google Takeout (JSON or ZIP)</h2>
+          <h2>Step 2A (Optional): Upload Google Takeout (JSON or ZIP)</h2>
           <p class="hint">
-            This is the main ingestion path. If Takeout import is disabled on backend, this card will show the reason.
+            Use this only if you want to import your real watch history. You can skip this and use Step 2B.
           </p>
           <form id="takeoutForm" class="takeout-form">
             <div class="takeout-grid">
@@ -66,7 +66,19 @@
         </article>
 
         <article class="card reveal">
-          <h2>Step 3: Manual Data Entry (Optional)</h2>
+          <h2>Step 2B (Optional): Quick Demo Data (No Takeout)</h2>
+          <p class="hint">
+            One click to create demo channels/videos/interactions so recommendations work immediately.
+          </p>
+          <form id="demoForm">
+            <label>Demo User ID <input name="user_id" required value="AbhiKanani07" /></label>
+            <button id="loadDemoBtn" type="submit">Load Demo Data</button>
+          </form>
+          <pre id="demoOutput" class="output"></pre>
+        </article>
+
+        <article class="card reveal">
+          <h2>Step 3 (Optional): Manual Data Entry</h2>
           <p class="hint">Use these only when you want to create or test data without Takeout files.</p>
 
           <details>
