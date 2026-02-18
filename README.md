@@ -211,6 +211,7 @@ The UI supports:
 - step-by-step layout (Verify API -> Upload Takeout -> Optional manual data -> Recommendations)
 - prominent Google Takeout upload card (JSON and ZIP, optional)
 - one-click `Load Demo Data` path (no Takeout required)
+- top toggle buttons to switch between `Use Quick Demo (No Takeout)` and `Use Google Takeout`
 - optional manual data-entry forms hidden under expandable sections
 - recommendation retrieval + recommendation history table
 - API base URL override (saved to localStorage)
@@ -236,22 +237,26 @@ $env:ENABLE_TAKEOUT_IMPORT="false"
 - `API Base URL`: `http://127.0.0.1:8000`
 - `Bearer Token`: leave empty unless your API is behind auth
 
-4. Run system checks:
+4. Choose ingestion mode using the toggle buttons:
+- `Use Quick Demo (No Takeout)` to enable one-click demo seeding
+- `Use Google Takeout` to show ZIP/JSON upload card
+
+5. Run system checks:
 - click `Check Health` (expect `{"status":"ok"}`)
 - click `Check Redis` (can fail with `503` if Redis is not running; this is okay for non-cached local testing)
 
-5. Create data:
+6. Create data:
 - use `Channel Upsert`
 - use `Video Upsert`
 - use `Log Interaction`
 
-6. Fetch recommendations:
+7. Fetch recommendations:
 - set `User ID` and `K`
 - click `Fetch`
 - results appear in recommendation cards
 - each fetch is added to the history table below
 
-7. Path A (optional): Google Takeout upload
+8. Path A (optional): Google Takeout upload
 - In the UI, the second card is `Step 2: Upload Google Takeout (JSON or ZIP)`.
 - Set `File Type` (`json` or `zip`), choose file, then click `Import Takeout File`.
 - If you see a disabled message, restart backend with:
@@ -260,7 +265,7 @@ $env:ENABLE_TAKEOUT_IMPORT="false"
 $env:ENABLE_TAKEOUT_IMPORT="true"
 ```
 
-8. Path B (recommended for quick testing, no Takeout needed):
+9. Path B (recommended for quick testing, no Takeout needed):
 - In the UI, use `Step 2B: Quick Demo Data (No Takeout)`.
 - Enter a user id and click `Load Demo Data`.
 - The UI will:
@@ -268,6 +273,7 @@ $env:ENABLE_TAKEOUT_IMPORT="true"
   - log demo interactions
   - auto-fetch recommendations
 - Any request failure now appears as red error text at the top of the UI and in the relevant card output panel.
+- If UI controls still seem non-responsive after deploy/update, hard refresh browser cache (`Ctrl+F5`).
 
 ### cURL Examples
 

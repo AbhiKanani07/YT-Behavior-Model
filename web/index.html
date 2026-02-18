@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>YouTube Recs Control Panel</title>
-    <link rel="stylesheet" href="/ui/styles.css" />
+    <link rel="stylesheet" href="/ui/styles.css?v=5" />
   </head>
   <body>
     <div class="bg-orb orb-a"></div>
@@ -27,6 +27,10 @@
         </div>
         <p id="connectionStatus" class="status-pill">Status: unknown</p>
         <p id="globalError" class="global-error hidden"></p>
+        <div class="mode-toggle" role="group" aria-label="Data mode">
+          <button id="modeDemoBtn" type="button">Use Quick Demo (No Takeout)</button>
+          <button id="modeTakeoutBtn" type="button">Use Google Takeout</button>
+        </div>
       </header>
 
       <section class="grid">
@@ -40,7 +44,7 @@
           <pre id="systemOutput" class="output"></pre>
         </article>
 
-        <article class="card wide takeout-card reveal">
+        <article id="takeoutCard" class="card wide takeout-card reveal">
           <h2>Step 2A (Optional): Upload Google Takeout (JSON or ZIP)</h2>
           <p class="hint">
             Use this only if you want to import your real watch history. You can skip this and use Step 2B.
@@ -66,7 +70,7 @@
           <pre id="takeoutOutput" class="output"></pre>
         </article>
 
-        <article class="card reveal">
+        <article id="demoCard" class="card reveal">
           <h2>Step 2B (Optional): Quick Demo Data (No Takeout)</h2>
           <p class="hint">
             One click to create demo channels/videos/interactions so recommendations work immediately.
@@ -158,6 +162,6 @@
       </section>
     </main>
 
-    <script src="/ui/app.js" defer></script>
+    <script src="/ui/app.js?v=5" defer></script>
   </body>
 </html>

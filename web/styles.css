@@ -114,6 +114,21 @@ h1 {
   background: #fdeff1;
 }
 
+.mode-toggle {
+  margin-top: 0.65rem;
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.mode-toggle button {
+  background: #1f4d5a;
+}
+
+.mode-toggle button.active {
+  background: linear-gradient(120deg, var(--accent), #ff8f2d);
+}
+
 .global-error {
   margin: 0.55rem 0 0;
   border-radius: 10px;
@@ -168,6 +183,10 @@ h1 {
 .takeout-card {
   border-color: #d69a70;
   background: linear-gradient(120deg, #fff9f2, #fffdf8);
+}
+
+.hidden-card {
+  display: none;
 }
 
 .card h2 {

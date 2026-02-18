@@ -1,10 +1,12 @@
 const HISTORY_KEY = "recHistory";
+const MODE_KEY = "uiMode";
 
 const state = {
   apiBase: "",
   apiToken: "",
   history: [],
   globalErrorEl: null,
+  mode: "demo",
 };
 
 const DEMO_CHANNELS = [
@@ -89,6 +91,15 @@ function resolveBaseUrl() {
 function resolveApiToken() {
   const stored = localStorage.getItem("apiToken");
   return stored ? stored.trim() : "";
+}
+
+function resolveMode() {
+  const stored = localStorage.getItem(MODE_KEY);
+  return stored === "takeout" ? "takeout" : "demo";
+}
+
+function saveMode(mode) {
+  localStorage.setItem(MODE_KEY, mode);
 }
 
 function safeErrorMessage(err) {
@@ -355,6 +366,10 @@ function bindControls() {
   const recommendationForm = byId("recommendationForm");
   const clearHistoryBtn = byId("clearHistoryBtn");
   const connectionStatus = byId("connectionStatus");
+  const modeDemoBtn = byId("modeDemoBtn");
+  const modeTakeoutBtn = byId("modeTakeoutBtn");
+  const takeoutCard = byId("takeoutCard");
+  const demoCard = byId("demoCard");
 
   const systemOutput = byId("systemOutput");
   const channelOutput = byId("channelOutput");
@@ -368,9 +383,30 @@ function bindControls() {
   state.apiBase = resolveBaseUrl();
   state.apiToken = resolveApiToken();
   state.history = loadHistory();
+  state.mode = resolveMode();
   apiBaseInput.value = state.apiBase;
   apiTokenInput.value = state.apiToken;
   renderHistory(historyTableBody);
+
+  function applyMode(mode) {
+    state.mode = mode === "takeout" ? "takeout" : "demo";
+    saveMode(state.mode);
+
+    modeDemoBtn.classList.toggle("active", state.mode === "demo");
+    modeTakeoutBtn.classList.toggle("active", state.mode === "takeout");
+    demoCard.classList.toggle("hidden-card", state.mode === "takeout");
+    takeoutCard.classList.toggle("hidden-card", state.mode === "demo");
+  }
+
+  modeDemoBtn.addEventListener("click", () => {
+    clearGlobalError();
+    applyMode("demo");
+  });
+
+  modeTakeoutBtn.addEventListener("click", () => {
+    clearGlobalError();
+    applyMode("takeout");
+  });
 
   saveBaseBtn.addEventListener("click", () => {
     clearGlobalError();
@@ -582,6 +618,7 @@ function bindControls() {
   });
 
   healthBtn.click();
+  applyMode(state.mode);
 }
 
 window.addEventListener("error", (event) => {
@@ -600,6 +637,7 @@ try {
     fallback.classList.remove("hidden");
     fallback.textContent = `Failed to initialize UI: ${safeErrorMessage(err)}`;
   }
+  window.alert(`Failed to initialize UI. Hard refresh the page (Ctrl+F5).\n\n${safeErrorMessage(err)}`);
   // eslint-disable-next-line no-console
   console.error(err);
 }
