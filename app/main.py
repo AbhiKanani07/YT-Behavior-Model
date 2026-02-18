@@ -73,6 +73,11 @@ def health_check() -> dict[str, str]:
     return {"status": "ok"}
 
 
+@app.get("/")
+def root() -> dict[str, str]:
+    return {"message": "API is running", "docs": "/docs", "health": "/health"}
+
+
 @app.get("/redis-ping")
 def redis_ping(redis: RedisDep) -> dict[str, bool]:
     try:
