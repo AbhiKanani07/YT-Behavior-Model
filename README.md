@@ -28,6 +28,8 @@ app/
     ingest.py
 tests/
   test_smoke.py
+scripts/
+  seed_demo.py
 requirements.txt
 Dockerfile
 docker-compose.yml
@@ -43,6 +45,7 @@ README.md
   - Example: `redis://localhost:6379/0`
 - `CORS_ORIGINS` (comma-separated string)
   - Example: `http://localhost:3000,http://localhost:5173`
+  - Local quick value: `*` or `["*"]`
 - `YOUTUBE_API_KEY` (optional; used by future ingest workflow)
 - `ENABLE_TAKEOUT_IMPORT` (optional, default `true`; set `false` to disable all Takeout import endpoints)
 
@@ -111,6 +114,67 @@ Optional flags:
 - `.\run_local.ps1 -SkipInstall` (if dependencies already installed)
 - `.\run_local.ps1 -NoRun` (setup only, do not start API)
 - `.\run_local.ps1 -EnableTakeoutImport false` (disable Takeout import endpoints)
+
+## Replicate Setup (Windows PowerShell)
+
+Use this exact sequence to reproduce the working local setup:
+
+1. Open PowerShell in repo root:
+
+```powershell
+cd C:\Users\arkan\Documents\Projects\youtube-recs
+```
+
+2. Allow script execution for current shell session only:
+
+```powershell
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+```
+
+3. Start local API using SQLite fallback (works without local Postgres):
+
+```powershell
+$env:DATABASE_URL="sqlite:///./youtube_recs.db"
+$env:REDIS_URL="redis://localhost:6379/0"
+$env:CORS_ORIGINS='["*"]'
+$env:ENABLE_TAKEOUT_IMPORT="false"
+.\.venv\Scripts\python.exe -m uvicorn app.main:app --host 127.0.0.1 --port 8000
+```
+
+4. In a second terminal, verify connectivity:
+
+```powershell
+Test-NetConnection 127.0.0.1 -Port 8000
+Invoke-RestMethod "http://127.0.0.1:8000/health"
+```
+
+5. Expected:
+- `TcpTestSucceeded : True`
+- `/health` response with `status = ok`
+
+## Seed Demo Data (One Command)
+
+With the API running, seed demo videos/interactions and fetch recommendations:
+
+```powershell
+.\.venv\Scripts\python.exe scripts\seed_demo.py --user-id AbhiKanani07 --k 20
+```
+
+Optional:
+
+```powershell
+.\.venv\Scripts\python.exe scripts\seed_demo.py --base-url http://127.0.0.1:8000 --user-id demo-user --k 10
+```
+
+This script:
+- upserts two channels
+- upserts six videos
+- logs interactions for the provided user
+- prints recommendation output JSON
+
+## PowerShell Request Note
+
+In PowerShell, prefer `Invoke-RestMethod` for JSON POSTs. `curl.exe -d` often needs heavy escaping and can cause `422` JSON decode errors.
 
 6. Open docs:
 

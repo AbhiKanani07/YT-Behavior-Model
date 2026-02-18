@@ -10,3 +10,4 @@ htmlcov/
 .env
 .DS_Store
 Thumbs.db
+youtube_recs.db
