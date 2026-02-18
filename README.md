@@ -44,6 +44,7 @@ README.md
 - `CORS_ORIGINS` (comma-separated string)
   - Example: `http://localhost:3000,http://localhost:5173`
 - `YOUTUBE_API_KEY` (optional; used by future ingest workflow)
+- `ENABLE_TAKEOUT_IMPORT` (optional, default `true`; set `false` to disable all Takeout import endpoints)
 
 ## Local Setup
 
@@ -82,6 +83,7 @@ Windows (PowerShell):
 $env:DATABASE_URL="postgresql+psycopg://postgres:postgres@localhost:5432/youtube_recs"
 $env:REDIS_URL="redis://localhost:6379/0"
 $env:CORS_ORIGINS="*"
+$env:ENABLE_TAKEOUT_IMPORT="false"
 ```
 
 macOS/Linux:
@@ -89,6 +91,7 @@ macOS/Linux:
 export DATABASE_URL="postgresql+psycopg://postgres:postgres@localhost:5432/youtube_recs"
 export REDIS_URL="redis://localhost:6379/0"
 export CORS_ORIGINS="*"
+export ENABLE_TAKEOUT_IMPORT="false"
 ```
 
 5. Run API:
@@ -96,6 +99,18 @@ export CORS_ORIGINS="*"
 ```bash
 uvicorn app.main:app --reload
 ```
+
+Or use one command on Windows PowerShell:
+
+```powershell
+.\run_local.ps1
+```
+
+Optional flags:
+- `.\run_local.ps1 -SkipCompose` (if services already running)
+- `.\run_local.ps1 -SkipInstall` (if dependencies already installed)
+- `.\run_local.ps1 -NoRun` (setup only, do not start API)
+- `.\run_local.ps1 -EnableTakeoutImport false` (disable Takeout import endpoints)
 
 6. Open docs:
 
@@ -115,6 +130,7 @@ uvicorn app.main:app --reload
 - `POST /ingest/google-takeout` (JSON body import)
 - `POST /ingest/google-takeout/file?user_id=<id>&source_file=<name>` (raw JSON file import)
 - `POST /ingest/google-takeout/zip?user_id=<id>&source_file=<name>` (raw ZIP import; auto-selects relevant JSON files)
+  - These three endpoints are disabled when `ENABLE_TAKEOUT_IMPORT=false`.
 
 ### cURL Examples
 

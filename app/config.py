@@ -22,6 +22,7 @@ class Settings(BaseSettings):
     redis_url: str = Field(default="redis://localhost:6379/0", alias="REDIS_URL")
     cors_origins: list[str] = Field(default_factory=lambda: ["*"], alias="CORS_ORIGINS")
     youtube_api_key: str | None = Field(default=None, alias="YOUTUBE_API_KEY")
+    enable_takeout_import: bool = Field(default=True, alias="ENABLE_TAKEOUT_IMPORT")
 
     recommendation_cache_ttl_seconds: int = 1800
     api_cache_ttl_seconds: int = 300

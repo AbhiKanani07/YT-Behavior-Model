@@ -48,6 +48,11 @@ DbDep = Annotated[Session, Depends(get_db)]
 RedisDep = Annotated[Redis, Depends(get_redis)]
 
 
+def ensure_takeout_import_enabled() -> None:
+    if not settings.enable_takeout_import:
+        raise HTTPException(status_code=404, detail="Google Takeout import is disabled by configuration.")
+
+
 @app.on_event("startup")
 def on_startup() -> None:
     try:
@@ -162,6 +167,7 @@ def ingest_google_takeout_json(
     db: DbDep,
     redis: RedisDep,
 ) -> schemas.GoogleTakeoutImportResponse:
+    ensure_takeout_import_enabled()
     try:
         summary = ingest_takeout_entries(
             db=db,
@@ -185,6 +191,7 @@ async def ingest_google_takeout_file(
     user_id: str = Query(..., min_length=1),
     source_file: str | None = Query(default=None),
 ) -> schemas.GoogleTakeoutImportResponse:
+    ensure_takeout_import_enabled()
     payload = await request.body()
     if not payload:
         raise HTTPException(status_code=400, detail="Request body is empty.")
@@ -212,6 +219,7 @@ async def ingest_google_takeout_zip(
     user_id: str = Query(..., min_length=1),
     source_file: str | None = Query(default=None),
 ) -> schemas.GoogleTakeoutImportResponse:
+    ensure_takeout_import_enabled()
     payload = await request.body()
     if not payload:
         raise HTTPException(status_code=400, detail="Request body is empty.")
