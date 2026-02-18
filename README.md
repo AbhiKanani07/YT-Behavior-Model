@@ -213,6 +213,49 @@ The UI supports:
 - interaction logging
 - recommendation retrieval and display
 - API base URL override (saved to localStorage)
+- optional bearer token input (sent as `Authorization: Bearer <token>`)
+- Takeout import panel for JSON and ZIP file uploads
+- recommendation history table (stored in browser localStorage)
+
+## UI Walkthrough (Replicate Exactly)
+
+1. Start the API server (from repo root):
+
+```powershell
+$env:DATABASE_URL="sqlite:///./youtube_recs.db"
+$env:REDIS_URL="redis://localhost:6379/0"
+$env:CORS_ORIGINS='["*"]'
+$env:ENABLE_TAKEOUT_IMPORT="false"
+.\.venv\Scripts\python.exe -m uvicorn app.main:app --host 127.0.0.1 --port 8000
+```
+
+2. Open UI:
+
+- `http://127.0.0.1:8000/ui`
+
+3. Save API client settings in UI header:
+- `API Base URL`: `http://127.0.0.1:8000`
+- `Bearer Token`: leave empty unless your API is behind auth
+
+4. Run system checks:
+- click `Check Health` (expect `{"status":"ok"}`)
+- click `Check Redis` (can fail with `503` if Redis is not running; this is okay for non-cached local testing)
+
+5. Create data:
+- use `Channel Upsert`
+- use `Video Upsert`
+- use `Log Interaction`
+
+6. Fetch recommendations:
+- set `User ID` and `K`
+- click `Fetch`
+- results appear in recommendation cards
+- each fetch is added to the history table below
+
+7. Optional Takeout import:
+- enable backend env `ENABLE_TAKEOUT_IMPORT=true` before starting server
+- in `Takeout Import` card, set `File Type` to `json` or `zip`
+- choose file and click `Import Takeout File`
 
 ### cURL Examples
 

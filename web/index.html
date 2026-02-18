@@ -21,6 +21,8 @@
         <div class="api-base">
           <label for="apiBase">API Base URL</label>
           <input id="apiBase" type="text" value="" placeholder="http://127.0.0.1:8000" />
+          <label for="apiToken">Bearer Token (optional)</label>
+          <input id="apiToken" type="password" value="" placeholder="token-for-auth-ready-apis" />
           <button id="saveBaseBtn" type="button">Save</button>
         </div>
       </header>
@@ -79,6 +81,24 @@
           <pre id="interactionOutput" class="output"></pre>
         </article>
 
+        <article class="card reveal">
+          <h2>Takeout Import</h2>
+          <form id="takeoutForm">
+            <label>User ID <input name="user_id" required value="AbhiKanani07" /></label>
+            <label>Source File Label <input name="source_file" placeholder="takeout.zip" /></label>
+            <label>
+              File Type
+              <select name="file_type">
+                <option value="zip">zip</option>
+                <option value="json">json</option>
+              </select>
+            </label>
+            <label>Select File <input name="file" type="file" accept=".json,.zip" required /></label>
+            <button type="submit">Import Takeout File</button>
+          </form>
+          <pre id="takeoutOutput" class="output"></pre>
+        </article>
+
         <article class="card wide reveal">
           <h2>Get Recommendations</h2>
           <form id="recommendationForm" class="inline-form">
@@ -87,6 +107,24 @@
             <button type="submit">Fetch</button>
           </form>
           <div id="recommendationList" class="rec-list"></div>
+          <div class="history-head">
+            <h3>Recommendation History</h3>
+            <button id="clearHistoryBtn" type="button">Clear History</button>
+          </div>
+          <div class="history-wrap">
+            <table class="history-table">
+              <thead>
+                <tr>
+                  <th>Timestamp</th>
+                  <th>User ID</th>
+                  <th>K</th>
+                  <th>Items</th>
+                  <th>Top Video</th>
+                </tr>
+              </thead>
+              <tbody id="historyTableBody"></tbody>
+            </table>
+          </div>
         </article>
       </section>
     </main>

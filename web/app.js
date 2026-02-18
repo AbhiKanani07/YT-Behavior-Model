@@ -1,5 +1,9 @@
+const HISTORY_KEY = "recHistory";
+
 const state = {
   apiBase: "",
+  apiToken: "",
+  history: [],
 };
 
 function resolveBaseUrl() {
@@ -8,6 +12,11 @@ function resolveBaseUrl() {
     return stored.trim().replace(/\/$/, "");
   }
   return window.location.origin.replace(/\/$/, "");
+}
+
+function resolveApiToken() {
+  const stored = localStorage.getItem("apiToken");
+  return stored ? stored.trim() : "";
 }
 
 function setOutput(el, payload) {
@@ -19,11 +28,21 @@ function setOutput(el, payload) {
   el.textContent = JSON.stringify(payload, null, 2);
 }
 
+function buildHeaders(contentType) {
+  const headers = {};
+  if (contentType) {
+    headers["Content-Type"] = contentType;
+  }
+  if (state.apiToken) {
+    headers.Authorization = `Bearer ${state.apiToken}`;
+  }
+  return headers;
+}
+
 async function request(method, path, body) {
   const url = `${state.apiBase}${path}`;
-  const init = { method, headers: {} };
+  const init = { method, headers: buildHeaders(body !== undefined ? "application/json" : null) };
   if (body !== undefined) {
-    init.headers["Content-Type"] = "application/json";
     init.body = JSON.stringify(body);
   }
   const res = await fetch(url, init);
@@ -32,7 +51,24 @@ async function request(method, path, body) {
   try {
     data = text ? JSON.parse(text) : null;
   } catch (_err) {
-    // non-json response fallback
+    // non-json fallback
+  }
+  if (!res.ok) {
+    throw new Error(typeof data === "string" ? data : JSON.stringify(data));
+  }
+  return data;
+}
+
+async function requestRaw(method, path, body, contentType) {
+  const url = `${state.apiBase}${path}`;
+  const init = { method, headers: buildHeaders(contentType), body };
+  const res = await fetch(url, init);
+  const text = await res.text();
+  let data = text;
+  try {
+    data = text ? JSON.parse(text) : null;
+  } catch (_err) {
+    // non-json fallback
   }
   if (!res.ok) {
     throw new Error(typeof data === "string" ? data : JSON.stringify(data));
@@ -51,6 +87,12 @@ function parseMaybeInt(raw) {
   if (!raw || !String(raw).trim()) return null;
   const value = Number.parseInt(String(raw), 10);
   return Number.isNaN(value) ? null : value;
+}
+
+function formatTime(isoLike) {
+  const d = new Date(isoLike);
+  if (Number.isNaN(d.getTime())) return String(isoLike);
+  return d.toLocaleString();
 }
 
 function renderRecommendations(target, response) {
@@ -74,29 +116,98 @@ function renderRecommendations(target, response) {
   }
 }
 
+function loadHistory() {
+  const raw = localStorage.getItem(HISTORY_KEY);
+  if (!raw) return [];
+  try {
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch (_err) {
+    return [];
+  }
+}
+
+function saveHistory() {
+  localStorage.setItem(HISTORY_KEY, JSON.stringify(state.history));
+}
+
+function addHistoryEntry(entry) {
+  state.history.unshift(entry);
+  state.history = state.history.slice(0, 50);
+  saveHistory();
+}
+
+function renderHistory(target) {
+  target.innerHTML = "";
+  if (!state.history.length) {
+    target.innerHTML = `<tr><td colspan="5">No history yet.</td></tr>`;
+    return;
+  }
+
+  for (const row of state.history) {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${formatTime(row.timestamp)}</td>
+      <td>${row.user_id}</td>
+      <td>${row.k}</td>
+      <td>${row.item_count}</td>
+      <td>${row.top_video_id || "-"}</td>
+    `;
+    target.appendChild(tr);
+  }
+}
+
+function toSafeFileName(fileName, fallback) {
+  const value = (fileName || fallback || "").trim();
+  return value || fallback;
+}
+
+async function readFileText(file) {
+  return await file.text();
+}
+
+async function readFileArrayBuffer(file) {
+  return await file.arrayBuffer();
+}
+
 function bindControls() {
   const apiBaseInput = document.querySelector("#apiBase");
+  const apiTokenInput = document.querySelector("#apiToken");
   const saveBaseBtn = document.querySelector("#saveBaseBtn");
   const healthBtn = document.querySelector("#healthBtn");
   const redisBtn = document.querySelector("#redisBtn");
   const channelForm = document.querySelector("#channelForm");
   const videoForm = document.querySelector("#videoForm");
   const interactionForm = document.querySelector("#interactionForm");
+  const takeoutForm = document.querySelector("#takeoutForm");
   const recommendationForm = document.querySelector("#recommendationForm");
+  const clearHistoryBtn = document.querySelector("#clearHistoryBtn");
 
   const systemOutput = document.querySelector("#systemOutput");
   const channelOutput = document.querySelector("#channelOutput");
   const videoOutput = document.querySelector("#videoOutput");
   const interactionOutput = document.querySelector("#interactionOutput");
+  const takeoutOutput = document.querySelector("#takeoutOutput");
   const recommendationList = document.querySelector("#recommendationList");
+  const historyTableBody = document.querySelector("#historyTableBody");
 
   state.apiBase = resolveBaseUrl();
+  state.apiToken = resolveApiToken();
+  state.history = loadHistory();
   apiBaseInput.value = state.apiBase;
+  apiTokenInput.value = state.apiToken;
+  renderHistory(historyTableBody);
 
   saveBaseBtn.addEventListener("click", () => {
     state.apiBase = apiBaseInput.value.trim().replace(/\/$/, "");
+    state.apiToken = apiTokenInput.value.trim();
     localStorage.setItem("apiBase", state.apiBase);
-    setOutput(systemOutput, { message: "Saved API base URL", apiBase: state.apiBase });
+    localStorage.setItem("apiToken", state.apiToken);
+    setOutput(systemOutput, {
+      message: "Saved API client settings",
+      apiBase: state.apiBase,
+      auth: state.apiToken ? "Bearer token configured" : "No token",
+    });
   });
 
   healthBtn.addEventListener("click", async () => {
@@ -163,6 +274,46 @@ function bindControls() {
     }
   });
 
+  takeoutForm.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const formData = new FormData(takeoutForm);
+    const userId = String(formData.get("user_id") || "").trim();
+    const sourceFileInput = String(formData.get("source_file") || "").trim();
+    const fileType = String(formData.get("file_type") || "zip").toLowerCase();
+    const file = formData.get("file");
+    if (!(file instanceof File)) {
+      setOutput(takeoutOutput, "No file selected.");
+      return;
+    }
+
+    const sourceFile = encodeURIComponent(toSafeFileName(sourceFileInput, file.name));
+    const userParam = encodeURIComponent(userId);
+
+    try {
+      let response;
+      if (fileType === "json") {
+        const body = await readFileText(file);
+        response = await requestRaw(
+          "POST",
+          `/ingest/google-takeout/file?user_id=${userParam}&source_file=${sourceFile}`,
+          body,
+          "application/json",
+        );
+      } else {
+        const body = await readFileArrayBuffer(file);
+        response = await requestRaw(
+          "POST",
+          `/ingest/google-takeout/zip?user_id=${userParam}&source_file=${sourceFile}`,
+          body,
+          "application/zip",
+        );
+      }
+      setOutput(takeoutOutput, response);
+    } catch (err) {
+      setOutput(takeoutOutput, `Takeout import failed: ${err.message}`);
+    }
+  });
+
   recommendationForm.addEventListener("submit", async (event) => {
     event.preventDefault();
     const formData = new FormData(recommendationForm);
@@ -171,9 +322,23 @@ function bindControls() {
     try {
       const data = await request("GET", `/recommendations?user_id=${encodeURIComponent(userId)}&k=${k}`);
       renderRecommendations(recommendationList, data);
+      addHistoryEntry({
+        timestamp: new Date().toISOString(),
+        user_id: userId,
+        k,
+        item_count: Array.isArray(data?.items) ? data.items.length : 0,
+        top_video_id: data?.items?.[0]?.video_id || null,
+      });
+      renderHistory(historyTableBody);
     } catch (err) {
       recommendationList.innerHTML = `<p>Recommendation fetch failed: ${err.message}</p>`;
     }
+  });
+
+  clearHistoryBtn.addEventListener("click", () => {
+    state.history = [];
+    saveHistory();
+    renderHistory(historyTableBody);
   });
 }
 

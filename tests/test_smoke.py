@@ -24,6 +24,13 @@ def test_root() -> None:
     assert payload["docs"] == "/docs"
 
 
+def test_ui_page_served() -> None:
+    client = TestClient(app)
+    response = client.get("/ui")
+    assert response.status_code == 200
+    assert "<html" in response.text.lower()
+
+
 def test_redis_ping() -> None:
     app.dependency_overrides[get_redis] = lambda: FakeRedis()
     client = TestClient(app)

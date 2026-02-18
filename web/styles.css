@@ -103,6 +103,10 @@ h1 {
   font-weight: 600;
 }
 
+.api-base input {
+  min-width: 220px;
+}
+
 .grid {
   margin-top: 1rem;
   display: grid;
@@ -220,6 +224,46 @@ button:hover {
 }
 
 .rec-item .video-id {
+  font-weight: 700;
+}
+
+.history-head {
+  margin-top: 1rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.history-head h3 {
+  margin: 0;
+  font-size: 0.95rem;
+}
+
+.history-wrap {
+  margin-top: 0.45rem;
+  overflow-x: auto;
+  border: 1.5px solid #d0be9f;
+  border-radius: 10px;
+  background: #fffdf8;
+}
+
+.history-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.86rem;
+}
+
+.history-table th,
+.history-table td {
+  border-bottom: 1px solid #eadfcf;
+  padding: 0.5rem 0.45rem;
+  text-align: left;
+  vertical-align: top;
+}
+
+.history-table th {
+  background: #f3e8d8;
   font-weight: 700;
 }
 
