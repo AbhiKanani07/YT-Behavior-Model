@@ -112,6 +112,9 @@ uvicorn app.main:app --reload
 - `POST /interactions`
 - `GET /recommendations?user_id=<id>&k=20`
 - `POST /cache/clear?user_id=<id>`
+- `POST /ingest/google-takeout` (JSON body import)
+- `POST /ingest/google-takeout/file?user_id=<id>&source_file=<name>` (raw JSON file import)
+- `POST /ingest/google-takeout/zip?user_id=<id>&source_file=<name>` (raw ZIP import; auto-selects relevant JSON files)
 
 ### cURL Examples
 
@@ -157,6 +160,41 @@ Get recommendations:
 curl "http://127.0.0.1:8000/recommendations?user_id=user-123&k=20"
 ```
 
+Import Google Takeout JSON (raw rows in JSON body):
+```bash
+curl -X POST "http://127.0.0.1:8000/ingest/google-takeout" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "user_id": "user-123",
+    "source_file": "watch-history.json",
+    "rows": [
+      {
+        "header": "YouTube",
+        "title": "Watched TF-IDF Recommenders Explained",
+        "titleUrl": "https://www.youtube.com/watch?v=VID001",
+        "subtitles": [{"name": "ML Insights", "url": "https://www.youtube.com/channel/UC001"}],
+        "time": "2025-01-04T17:28:31.000Z",
+        "products": ["YouTube"],
+        "activityControls": ["YouTube watch history"]
+      }
+    ]
+  }'
+```
+
+Import Google Takeout JSON file directly:
+```bash
+curl -X POST "http://127.0.0.1:8000/ingest/google-takeout/file?user_id=user-123&source_file=watch-history.json" \
+  -H "Content-Type: application/json" \
+  --data-binary "@watch-history.json"
+```
+
+Import full Google Takeout ZIP directly:
+```bash
+curl -X POST "http://127.0.0.1:8000/ingest/google-takeout/zip?user_id=user-123&source_file=takeout-2026-02-17.zip" \
+  -H "Content-Type: application/zip" \
+  --data-binary "@takeout-2026-02-17.zip"
+```
+
 ## How Recommendations Work
 
 - Build corpus from `title + description`.
@@ -172,6 +210,8 @@ curl "http://127.0.0.1:8000/recommendations?user_id=user-123&k=20"
 - Recommendation cache key: `recs:{user_id}:{k}` with TTL = 1800 seconds.
 - Video list API cache key: `api:videos:{limit}` with TTL = 300 seconds.
 - Placeholder reserved for YouTube API response cache keys: `yt_cache:*`.
+- Google Takeout imports automatically clear user recommendation cache keys.
+- ZIP imports report `processed_files`, `skipped_files`, and `parse_errors` for observability.
 
 ## Running Tests
 

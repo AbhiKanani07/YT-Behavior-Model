@@ -75,3 +75,23 @@ class RecommendationResponse(BaseModel):
     user_id: str
     k: int
     items: list[RecommendationItem]
+
+
+class GoogleTakeoutImportRequest(BaseModel):
+    user_id: str = Field(..., min_length=1, max_length=128)
+    rows: list[dict[str, Any]]
+    source_file: str | None = None
+
+
+class GoogleTakeoutImportResponse(BaseModel):
+    source_file: str | None
+    total_rows: int
+    imported_rows: int
+    skipped_rows: int
+    watch_events: int
+    click_events: int
+    like_events: int
+    skip_events: int
+    processed_files: list[str] = Field(default_factory=list)
+    skipped_files: list[str] = Field(default_factory=list)
+    parse_errors: list[str] = Field(default_factory=list)

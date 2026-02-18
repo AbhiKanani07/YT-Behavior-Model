@@ -3,7 +3,7 @@ from __future__ import annotations
 import logging
 from typing import Annotated
 
-from fastapi import Depends, FastAPI, HTTPException, Query
+from fastapi import Depends, FastAPI, HTTPException, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
 from redis import Redis
 from redis.exceptions import RedisError
@@ -19,6 +19,7 @@ from app.redis_client import (
     get_redis_client,
     set_cache_json,
 )
+from app.services.ingest import ingest_takeout_entries, ingest_takeout_json_bytes, ingest_takeout_zip_bytes
 from app.services.recommend import generate_recommendations
 
 logger = logging.getLogger(__name__)
@@ -153,4 +154,79 @@ def get_recommendations(
 def clear_cache(user_id: str, redis: RedisDep) -> dict[str, str]:
     cleared = clear_user_recs_cache(redis, user_id)
     return {"status": "ok", "message": f"Cleared {cleared} recommendation cache keys for {user_id}"}
+
+
+@app.post("/ingest/google-takeout", response_model=schemas.GoogleTakeoutImportResponse)
+def ingest_google_takeout_json(
+    payload: schemas.GoogleTakeoutImportRequest,
+    db: DbDep,
+    redis: RedisDep,
+) -> schemas.GoogleTakeoutImportResponse:
+    try:
+        summary = ingest_takeout_entries(
+            db=db,
+            user_id=payload.user_id,
+            rows=payload.rows,
+            source_file=payload.source_file,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+    clear_user_recs_cache(redis, payload.user_id)
+    clear_pattern(redis, "api:videos:*")
+    return schemas.GoogleTakeoutImportResponse(**summary.as_dict())
+
+
+@app.post("/ingest/google-takeout/file", response_model=schemas.GoogleTakeoutImportResponse)
+async def ingest_google_takeout_file(
+    request: Request,
+    db: DbDep,
+    redis: RedisDep,
+    user_id: str = Query(..., min_length=1),
+    source_file: str | None = Query(default=None),
+) -> schemas.GoogleTakeoutImportResponse:
+    payload = await request.body()
+    if not payload:
+        raise HTTPException(status_code=400, detail="Request body is empty.")
+
+    try:
+        summary = ingest_takeout_json_bytes(
+            db=db,
+            user_id=user_id,
+            raw_bytes=payload,
+            source_file=source_file,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+    clear_user_recs_cache(redis, user_id)
+    clear_pattern(redis, "api:videos:*")
+    return schemas.GoogleTakeoutImportResponse(**summary.as_dict())
+
+
+@app.post("/ingest/google-takeout/zip", response_model=schemas.GoogleTakeoutImportResponse)
+async def ingest_google_takeout_zip(
+    request: Request,
+    db: DbDep,
+    redis: RedisDep,
+    user_id: str = Query(..., min_length=1),
+    source_file: str | None = Query(default=None),
+) -> schemas.GoogleTakeoutImportResponse:
+    payload = await request.body()
+    if not payload:
+        raise HTTPException(status_code=400, detail="Request body is empty.")
+
+    try:
+        summary = ingest_takeout_zip_bytes(
+            db=db,
+            user_id=user_id,
+            raw_bytes=payload,
+            source_file=source_file,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+    clear_user_recs_cache(redis, user_id)
+    clear_pattern(redis, "api:videos:*")
+    return schemas.GoogleTakeoutImportResponse(**summary.as_dict())
 
