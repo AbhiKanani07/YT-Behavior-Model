@@ -114,6 +114,20 @@ h1 {
   background: #fdeff1;
 }
 
+.global-error {
+  margin: 0.55rem 0 0;
+  border-radius: 10px;
+  border: 1.5px solid #d0838e;
+  background: #ffeef2;
+  color: #8c152b;
+  font-weight: 700;
+  padding: 0.48rem 0.65rem;
+}
+
+.global-error.hidden {
+  display: none;
+}
+
 .hint {
   margin: 0 0 0.65rem;
   color: var(--ink-soft);
@@ -273,6 +287,12 @@ summary {
   overflow: auto;
   font-size: 0.83rem;
   white-space: pre-wrap;
+}
+
+.output.error-output {
+  border: 1.5px solid #d0838e;
+  background: #2f1d22;
+  color: #ffd8df;
 }
 
 .rec-list {

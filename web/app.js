@@ -4,6 +4,7 @@ const state = {
   apiBase: "",
   apiToken: "",
   history: [],
+  globalErrorEl: null,
 };
 
 const DEMO_CHANNELS = [
@@ -69,6 +70,14 @@ const DEMO_INTERACTIONS = [
   { video_id: "VID_ML_006", event_type: "click", watch_seconds: null },
 ];
 
+function byId(id) {
+  const element = document.getElementById(id);
+  if (!element) {
+    throw new Error(`Missing UI element: #${id}`);
+  }
+  return element;
+}
+
 function resolveBaseUrl() {
   const stored = localStorage.getItem("apiBase");
   if (stored && stored.trim()) {
@@ -82,13 +91,51 @@ function resolveApiToken() {
   return stored ? stored.trim() : "";
 }
 
+function safeErrorMessage(err) {
+  if (!err) return "Unknown error";
+  if (typeof err === "string") return err;
+  if (err instanceof Error) return err.message;
+  try {
+    return JSON.stringify(err);
+  } catch (_jsonErr) {
+    return "Unknown error";
+  }
+}
+
+function setGlobalError(message) {
+  const el = state.globalErrorEl;
+  if (!el) return;
+  el.textContent = message;
+  el.classList.remove("hidden");
+}
+
+function clearGlobalError() {
+  const el = state.globalErrorEl;
+  if (!el) return;
+  el.textContent = "";
+  el.classList.add("hidden");
+}
+
+function markOutput(el, isError) {
+  if (!el) return;
+  el.classList.toggle("error-output", Boolean(isError));
+}
+
 function setOutput(el, payload) {
   if (!el) return;
+  markOutput(el, false);
   if (typeof payload === "string") {
     el.textContent = payload;
     return;
   }
   el.textContent = JSON.stringify(payload, null, 2);
+}
+
+function setErrorOutput(el, message) {
+  if (!el) return;
+  markOutput(el, true);
+  el.textContent = message;
+  setGlobalError(message);
 }
 
 function setConnectionStatus(el, ok, message) {
@@ -113,13 +160,33 @@ function buildHeaders(contentType) {
   return headers;
 }
 
+async function fetchWithTimeout(url, init, timeoutMs = 45000) {
+  const controller = new AbortController();
+  const timeoutId = window.setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return await fetch(url, { ...init, signal: controller.signal });
+  } finally {
+    window.clearTimeout(timeoutId);
+  }
+}
+
 async function request(method, path, body) {
   const url = `${state.apiBase}${path}`;
   const init = { method, headers: buildHeaders(body !== undefined ? "application/json" : null) };
   if (body !== undefined) {
     init.body = JSON.stringify(body);
   }
-  const res = await fetch(url, init);
+
+  let res;
+  try {
+    res = await fetchWithTimeout(url, init);
+  } catch (err) {
+    if (err?.name === "AbortError") {
+      throw new Error(`Request timed out: ${method} ${path}`);
+    }
+    throw new Error(`Network error calling ${url}`);
+  }
+
   const text = await res.text();
   let data = text;
   try {
@@ -135,8 +202,20 @@ async function request(method, path, body) {
 
 async function requestRaw(method, path, body, contentType) {
   const url = `${state.apiBase}${path}`;
-  const init = { method, headers: buildHeaders(contentType), body };
-  const res = await fetch(url, init);
+  let res;
+  try {
+    res = await fetchWithTimeout(url, {
+      method,
+      headers: buildHeaders(contentType),
+      body,
+    });
+  } catch (err) {
+    if (err?.name === "AbortError") {
+      throw new Error(`Upload timed out: ${method} ${path}`);
+    }
+    throw new Error(`Network error calling ${url}`);
+  }
+
   const text = await res.text();
   let data = text;
   try {
@@ -236,14 +315,6 @@ function toSafeFileName(fileName, fallback) {
   return value || fallback;
 }
 
-async function readFileText(file) {
-  return await file.text();
-}
-
-async function readFileArrayBuffer(file) {
-  return await file.arrayBuffer();
-}
-
 async function loadDemoData(userId) {
   for (const channel of DEMO_CHANNELS) {
     await request("POST", "/channels/upsert", channel);
@@ -269,28 +340,30 @@ async function loadDemoData(userId) {
 }
 
 function bindControls() {
-  const apiBaseInput = document.querySelector("#apiBase");
-  const apiTokenInput = document.querySelector("#apiToken");
-  const saveBaseBtn = document.querySelector("#saveBaseBtn");
-  const healthBtn = document.querySelector("#healthBtn");
-  const redisBtn = document.querySelector("#redisBtn");
-  const channelForm = document.querySelector("#channelForm");
-  const videoForm = document.querySelector("#videoForm");
-  const interactionForm = document.querySelector("#interactionForm");
-  const takeoutForm = document.querySelector("#takeoutForm");
-  const demoForm = document.querySelector("#demoForm");
-  const recommendationForm = document.querySelector("#recommendationForm");
-  const clearHistoryBtn = document.querySelector("#clearHistoryBtn");
-  const connectionStatus = document.querySelector("#connectionStatus");
+  state.globalErrorEl = byId("globalError");
 
-  const systemOutput = document.querySelector("#systemOutput");
-  const channelOutput = document.querySelector("#channelOutput");
-  const videoOutput = document.querySelector("#videoOutput");
-  const interactionOutput = document.querySelector("#interactionOutput");
-  const takeoutOutput = document.querySelector("#takeoutOutput");
-  const demoOutput = document.querySelector("#demoOutput");
-  const recommendationList = document.querySelector("#recommendationList");
-  const historyTableBody = document.querySelector("#historyTableBody");
+  const apiBaseInput = byId("apiBase");
+  const apiTokenInput = byId("apiToken");
+  const saveBaseBtn = byId("saveBaseBtn");
+  const healthBtn = byId("healthBtn");
+  const redisBtn = byId("redisBtn");
+  const channelForm = byId("channelForm");
+  const videoForm = byId("videoForm");
+  const interactionForm = byId("interactionForm");
+  const takeoutForm = byId("takeoutForm");
+  const demoForm = byId("demoForm");
+  const recommendationForm = byId("recommendationForm");
+  const clearHistoryBtn = byId("clearHistoryBtn");
+  const connectionStatus = byId("connectionStatus");
+
+  const systemOutput = byId("systemOutput");
+  const channelOutput = byId("channelOutput");
+  const videoOutput = byId("videoOutput");
+  const interactionOutput = byId("interactionOutput");
+  const takeoutOutput = byId("takeoutOutput");
+  const demoOutput = byId("demoOutput");
+  const recommendationList = byId("recommendationList");
+  const historyTableBody = byId("historyTableBody");
 
   state.apiBase = resolveBaseUrl();
   state.apiToken = resolveApiToken();
@@ -300,6 +373,7 @@ function bindControls() {
   renderHistory(historyTableBody);
 
   saveBaseBtn.addEventListener("click", () => {
+    clearGlobalError();
     state.apiBase = apiBaseInput.value.trim().replace(/\/$/, "");
     state.apiToken = apiTokenInput.value.trim();
     localStorage.setItem("apiBase", state.apiBase);
@@ -313,26 +387,30 @@ function bindControls() {
   });
 
   healthBtn.addEventListener("click", async () => {
+    clearGlobalError();
     try {
       const data = await request("GET", "/health");
       setOutput(systemOutput, data);
       setConnectionStatus(connectionStatus, data?.status === "ok", data?.status || "unknown");
     } catch (err) {
-      setOutput(systemOutput, `Health check failed: ${err.message}`);
+      const message = `Health check failed: ${safeErrorMessage(err)}`;
+      setErrorOutput(systemOutput, message);
       setConnectionStatus(connectionStatus, false, "health check failed");
     }
   });
 
   redisBtn.addEventListener("click", async () => {
+    clearGlobalError();
     try {
       setOutput(systemOutput, await request("GET", "/redis-ping"));
     } catch (err) {
-      setOutput(systemOutput, `Redis check failed: ${err.message}`);
+      setErrorOutput(systemOutput, `Redis check failed: ${safeErrorMessage(err)}`);
     }
   });
 
   channelForm.addEventListener("submit", async (event) => {
     event.preventDefault();
+    clearGlobalError();
     const formData = new FormData(channelForm);
     const payload = {
       channel_id: formData.get("channel_id"),
@@ -341,12 +419,13 @@ function bindControls() {
     try {
       setOutput(channelOutput, await request("POST", "/channels/upsert", payload));
     } catch (err) {
-      setOutput(channelOutput, `Upsert failed: ${err.message}`);
+      setErrorOutput(channelOutput, `Upsert failed: ${safeErrorMessage(err)}`);
     }
   });
 
   videoForm.addEventListener("submit", async (event) => {
     event.preventDefault();
+    clearGlobalError();
     const formData = new FormData(videoForm);
     const payload = {
       video_id: formData.get("video_id"),
@@ -359,12 +438,13 @@ function bindControls() {
     try {
       setOutput(videoOutput, await request("POST", "/videos/upsert", payload));
     } catch (err) {
-      setOutput(videoOutput, `Upsert failed: ${err.message}`);
+      setErrorOutput(videoOutput, `Upsert failed: ${safeErrorMessage(err)}`);
     }
   });
 
   interactionForm.addEventListener("submit", async (event) => {
     event.preventDefault();
+    clearGlobalError();
     const formData = new FormData(interactionForm);
     const payload = {
       user_id: formData.get("user_id"),
@@ -375,29 +455,33 @@ function bindControls() {
     try {
       setOutput(interactionOutput, await request("POST", "/interactions", payload));
     } catch (err) {
-      setOutput(interactionOutput, `Interaction failed: ${err.message}`);
+      setErrorOutput(interactionOutput, `Interaction failed: ${safeErrorMessage(err)}`);
     }
   });
 
   takeoutForm.addEventListener("submit", async (event) => {
     event.preventDefault();
+    clearGlobalError();
+    const submitBtn = takeoutForm.querySelector("button[type='submit']");
     const formData = new FormData(takeoutForm);
     const userId = String(formData.get("user_id") || "").trim();
     const sourceFileInput = String(formData.get("source_file") || "").trim();
     const fileType = String(formData.get("file_type") || "zip").toLowerCase();
     const file = formData.get("file");
     if (!(file instanceof File)) {
-      setOutput(takeoutOutput, "No file selected.");
+      setErrorOutput(takeoutOutput, "No file selected.");
       return;
     }
 
     const sourceFile = encodeURIComponent(toSafeFileName(sourceFileInput, file.name));
     const userParam = encodeURIComponent(userId);
+    setOutput(takeoutOutput, "Uploading and importing file...");
+    if (submitBtn) submitBtn.disabled = true;
 
     try {
       let response;
       if (fileType === "json") {
-        const body = await readFileText(file);
+        const body = await file.text();
         response = await requestRaw(
           "POST",
           `/ingest/google-takeout/file?user_id=${userParam}&source_file=${sourceFile}`,
@@ -405,7 +489,7 @@ function bindControls() {
           "application/json",
         );
       } else {
-        const body = await readFileArrayBuffer(file);
+        const body = await file.arrayBuffer();
         response = await requestRaw(
           "POST",
           `/ingest/google-takeout/zip?user_id=${userParam}&source_file=${sourceFile}`,
@@ -415,32 +499,35 @@ function bindControls() {
       }
       setOutput(takeoutOutput, response);
     } catch (err) {
-      const message = String(err.message || "");
+      const message = safeErrorMessage(err);
       if (message.includes("disabled by configuration")) {
-        setOutput(
+        setErrorOutput(
           takeoutOutput,
           "Takeout import is disabled on backend. Start API with ENABLE_TAKEOUT_IMPORT=true to use this feature.",
         );
       } else {
-        setOutput(takeoutOutput, `Takeout import failed: ${message}`);
+        setErrorOutput(takeoutOutput, `Takeout import failed: ${message}`);
       }
+    } finally {
+      if (submitBtn) submitBtn.disabled = false;
     }
   });
 
   demoForm.addEventListener("submit", async (event) => {
     event.preventDefault();
+    clearGlobalError();
+    const submitBtn = demoForm.querySelector("button[type='submit']");
     const formData = new FormData(demoForm);
     const userId = String(formData.get("user_id") || "").trim();
     const recUserInput = recommendationForm.querySelector("input[name='user_id']");
     const recKInput = recommendationForm.querySelector("input[name='k']");
     const k = parseMaybeInt(recKInput ? recKInput.value : "20") || 20;
+
     setOutput(demoOutput, "Loading demo dataset...");
+    if (submitBtn) submitBtn.disabled = true;
     try {
       const summary = await loadDemoData(userId);
-      const recData = await request(
-        "GET",
-        `/recommendations?user_id=${encodeURIComponent(userId)}&k=${k}`,
-      );
+      const recData = await request("GET", `/recommendations?user_id=${encodeURIComponent(userId)}&k=${k}`);
       renderRecommendations(recommendationList, recData);
       addHistoryEntry({
         timestamp: new Date().toISOString(),
@@ -459,12 +546,15 @@ function bindControls() {
         recUserInput.value = userId;
       }
     } catch (err) {
-      setOutput(demoOutput, `Demo load failed: ${err.message}`);
+      setErrorOutput(demoOutput, `Demo load failed: ${safeErrorMessage(err)}`);
+    } finally {
+      if (submitBtn) submitBtn.disabled = false;
     }
   });
 
   recommendationForm.addEventListener("submit", async (event) => {
     event.preventDefault();
+    clearGlobalError();
     const formData = new FormData(recommendationForm);
     const userId = String(formData.get("user_id") || "");
     const k = parseMaybeInt(formData.get("k")) || 20;
@@ -480,7 +570,8 @@ function bindControls() {
       });
       renderHistory(historyTableBody);
     } catch (err) {
-      recommendationList.innerHTML = `<p>Recommendation fetch failed: ${err.message}</p>`;
+      recommendationList.innerHTML = `<p class="hint">Recommendation fetch failed: ${safeErrorMessage(err)}</p>`;
+      setGlobalError(`Recommendation fetch failed: ${safeErrorMessage(err)}`);
     }
   });
 
@@ -493,4 +584,22 @@ function bindControls() {
   healthBtn.click();
 }
 
-bindControls();
+window.addEventListener("error", (event) => {
+  setGlobalError(`UI error: ${safeErrorMessage(event.error || event.message)}`);
+});
+
+window.addEventListener("unhandledrejection", (event) => {
+  setGlobalError(`Unhandled async error: ${safeErrorMessage(event.reason)}`);
+});
+
+try {
+  bindControls();
+} catch (err) {
+  const fallback = document.getElementById("globalError");
+  if (fallback) {
+    fallback.classList.remove("hidden");
+    fallback.textContent = `Failed to initialize UI: ${safeErrorMessage(err)}`;
+  }
+  // eslint-disable-next-line no-console
+  console.error(err);
+}

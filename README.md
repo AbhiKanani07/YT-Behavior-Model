@@ -267,6 +267,7 @@ $env:ENABLE_TAKEOUT_IMPORT="true"
   - upsert demo channels/videos
   - log demo interactions
   - auto-fetch recommendations
+- Any request failure now appears as red error text at the top of the UI and in the relevant card output panel.
 
 ### cURL Examples
 
