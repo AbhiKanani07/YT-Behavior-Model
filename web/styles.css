@@ -1,0 +1,265 @@
+:root {
+  --bg: #f2eee6;
+  --ink: #10212b;
+  --ink-soft: #314b58;
+  --panel: #fffdf8;
+  --panel-border: #d6c8b2;
+  --accent: #ff6d2d;
+  --accent-2: #006e7f;
+  --shadow: 0 18px 40px rgba(16, 33, 43, 0.14);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: "Space Grotesk", "IBM Plex Sans", "Trebuchet MS", sans-serif;
+  color: var(--ink);
+  background: radial-gradient(circle at 15% 10%, #fef5e9 0%, var(--bg) 46%, #e8ecef 100%);
+  overflow-x: hidden;
+}
+
+.bg-grid {
+  position: fixed;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.32) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.32) 1px, transparent 1px);
+  background-size: 24px 24px;
+  pointer-events: none;
+  opacity: 0.35;
+}
+
+.bg-orb {
+  position: fixed;
+  border-radius: 999px;
+  filter: blur(4px);
+  pointer-events: none;
+}
+
+.orb-a {
+  width: 320px;
+  height: 320px;
+  background: rgba(255, 109, 45, 0.18);
+  top: -90px;
+  right: -70px;
+}
+
+.orb-b {
+  width: 260px;
+  height: 260px;
+  background: rgba(0, 110, 127, 0.2);
+  bottom: -80px;
+  left: -70px;
+}
+
+.page {
+  position: relative;
+  width: min(1160px, 100% - 2rem);
+  margin: 1.2rem auto 2rem;
+  z-index: 2;
+}
+
+.hero {
+  border: 2px solid var(--panel-border);
+  border-radius: 22px;
+  background: linear-gradient(120deg, rgba(255, 253, 248, 0.97), rgba(240, 247, 250, 0.9));
+  box-shadow: var(--shadow);
+  padding: 1.25rem 1.4rem;
+}
+
+.eyebrow {
+  margin: 0 0 0.35rem 0;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--accent-2);
+  text-transform: uppercase;
+  font-size: 0.78rem;
+}
+
+h1 {
+  margin: 0;
+  font-size: clamp(1.5rem, 3.8vw, 2.5rem);
+  line-height: 1.1;
+}
+
+.subhead {
+  margin: 0.55rem 0 0.9rem 0;
+  color: var(--ink-soft);
+  max-width: 70ch;
+}
+
+.api-base {
+  display: flex;
+  gap: 0.55rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.api-base label {
+  font-weight: 600;
+}
+
+.grid {
+  margin-top: 1rem;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 0.9rem;
+}
+
+.card {
+  border: 2px solid var(--panel-border);
+  border-radius: 18px;
+  background: var(--panel);
+  padding: 1rem;
+  box-shadow: var(--shadow);
+}
+
+.card.wide {
+  grid-column: 1 / -1;
+}
+
+.card h2 {
+  margin: 0 0 0.7rem 0;
+  font-size: 1.05rem;
+}
+
+form {
+  display: grid;
+  gap: 0.55rem;
+}
+
+label {
+  display: grid;
+  gap: 0.3rem;
+  font-size: 0.92rem;
+}
+
+input,
+textarea,
+select,
+button {
+  font: inherit;
+}
+
+input,
+textarea,
+select {
+  width: 100%;
+  border: 1.5px solid #cebca2;
+  border-radius: 10px;
+  padding: 0.52rem 0.6rem;
+  background: #fff;
+}
+
+input:focus,
+textarea:focus,
+select:focus {
+  outline: 2px solid rgba(0, 110, 127, 0.32);
+  border-color: #7aa6b2;
+}
+
+button {
+  border: none;
+  border-radius: 10px;
+  padding: 0.56rem 0.9rem;
+  cursor: pointer;
+  background: linear-gradient(120deg, var(--accent), #ff8f2d);
+  color: #fff;
+  font-weight: 700;
+}
+
+button:hover {
+  filter: brightness(1.05);
+}
+
+.actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.inline-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+  align-items: end;
+}
+
+.inline-form label {
+  min-width: 180px;
+}
+
+.output {
+  margin: 0.7rem 0 0;
+  background: #13222d;
+  color: #def3ff;
+  border-radius: 10px;
+  padding: 0.6rem;
+  min-height: 72px;
+  max-height: 220px;
+  overflow: auto;
+  font-size: 0.83rem;
+  white-space: pre-wrap;
+}
+
+.rec-list {
+  margin-top: 0.8rem;
+  display: grid;
+  gap: 0.55rem;
+}
+
+.rec-item {
+  border: 1.5px dashed #c7b089;
+  border-radius: 10px;
+  padding: 0.55rem 0.65rem;
+  background: #fffbf4;
+}
+
+.rec-item .video-id {
+  font-weight: 700;
+}
+
+.reveal {
+  animation: slide-up 0.5s ease both;
+}
+
+.reveal:nth-child(2) {
+  animation-delay: 0.05s;
+}
+
+.reveal:nth-child(3) {
+  animation-delay: 0.1s;
+}
+
+.reveal:nth-child(4) {
+  animation-delay: 0.15s;
+}
+
+.reveal:nth-child(5) {
+  animation-delay: 0.2s;
+}
+
+@keyframes slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 640px) {
+  .page {
+    width: min(1160px, 100% - 1rem);
+  }
+
+  .hero {
+    padding: 1rem;
+  }
+}

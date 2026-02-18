@@ -30,6 +30,10 @@ tests/
   test_smoke.py
 scripts/
   seed_demo.py
+web/
+  index.html
+  styles.css
+  app.js
 requirements.txt
 Dockerfile
 docker-compose.yml
@@ -184,6 +188,7 @@ In PowerShell, prefer `Invoke-RestMethod` for JSON POSTs. `curl.exe -d` often ne
 ## API Endpoints
 
 - `GET /health`
+- `GET /` (basic API root message)
 - `GET /redis-ping`
 - `POST /channels/upsert`
 - `POST /videos/upsert`
@@ -195,6 +200,19 @@ In PowerShell, prefer `Invoke-RestMethod` for JSON POSTs. `curl.exe -d` often ne
 - `POST /ingest/google-takeout/file?user_id=<id>&source_file=<name>` (raw JSON file import)
 - `POST /ingest/google-takeout/zip?user_id=<id>&source_file=<name>` (raw ZIP import; auto-selects relevant JSON files)
   - These three endpoints are disabled when `ENABLE_TAKEOUT_IMPORT=false`.
+
+## Web UI (Built-In)
+
+The backend now serves a control panel UI at:
+
+- `http://127.0.0.1:8000/ui`
+
+The UI supports:
+- health + redis checks
+- channel/video upsert
+- interaction logging
+- recommendation retrieval and display
+- API base URL override (saved to localStorage)
 
 ### cURL Examples
 

@@ -11,3 +11,4 @@ htmlcov/
 .DS_Store
 Thumbs.db
 youtube_recs.db
+web/node_modules/

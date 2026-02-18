@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>YouTube Recs Control Panel</title>
+    <link rel="stylesheet" href="/ui/styles.css" />
+  </head>
+  <body>
+    <div class="bg-orb orb-a"></div>
+    <div class="bg-orb orb-b"></div>
+    <div class="bg-grid"></div>
+
+    <main class="page">
+      <header class="hero reveal">
+        <p class="eyebrow">Recommendation Engine</p>
+        <h1>YouTube Recs Control Panel</h1>
+        <p class="subhead">
+          Operate ingestion, interaction logging, and recommendation retrieval from one interface.
+        </p>
+        <div class="api-base">
+          <label for="apiBase">API Base URL</label>
+          <input id="apiBase" type="text" value="" placeholder="http://127.0.0.1:8000" />
+          <button id="saveBaseBtn" type="button">Save</button>
+        </div>
+      </header>
+
+      <section class="grid">
+        <article class="card reveal">
+          <h2>System Checks</h2>
+          <div class="actions">
+            <button id="healthBtn" type="button">Check Health</button>
+            <button id="redisBtn" type="button">Check Redis</button>
+          </div>
+          <pre id="systemOutput" class="output"></pre>
+        </article>
+
+        <article class="card reveal">
+          <h2>Channel Upsert</h2>
+          <form id="channelForm">
+            <label>Channel ID <input name="channel_id" required /></label>
+            <label>Title <input name="title" required /></label>
+            <button type="submit">Upsert Channel</button>
+          </form>
+          <pre id="channelOutput" class="output"></pre>
+        </article>
+
+        <article class="card reveal">
+          <h2>Video Upsert</h2>
+          <form id="videoForm">
+            <label>Video ID <input name="video_id" required /></label>
+            <label>Channel ID <input name="channel_id" required /></label>
+            <label>Title <input name="title" required /></label>
+            <label>Description <textarea name="description" rows="3"></textarea></label>
+            <label>Tags (comma-separated) <input name="tags" /></label>
+            <label>Duration Seconds <input name="duration_seconds" type="number" min="0" /></label>
+            <button type="submit">Upsert Video</button>
+          </form>
+          <pre id="videoOutput" class="output"></pre>
+        </article>
+
+        <article class="card reveal">
+          <h2>Log Interaction</h2>
+          <form id="interactionForm">
+            <label>User ID <input name="user_id" required /></label>
+            <label>Video ID <input name="video_id" required /></label>
+            <label>
+              Event Type
+              <select name="event_type">
+                <option value="watch">watch</option>
+                <option value="click">click</option>
+                <option value="like">like</option>
+                <option value="skip">skip</option>
+              </select>
+            </label>
+            <label>Watch Seconds <input name="watch_seconds" type="number" min="0" /></label>
+            <button type="submit">Log Interaction</button>
+          </form>
+          <pre id="interactionOutput" class="output"></pre>
+        </article>
+
+        <article class="card wide reveal">
+          <h2>Get Recommendations</h2>
+          <form id="recommendationForm" class="inline-form">
+            <label>User ID <input name="user_id" required value="AbhiKanani07" /></label>
+            <label>K <input name="k" type="number" min="1" max="100" value="20" /></label>
+            <button type="submit">Fetch</button>
+          </form>
+          <div id="recommendationList" class="rec-list"></div>
+        </article>
+      </section>
+    </main>
+
+    <script src="/ui/app.js" defer></script>
+  </body>
+</html>

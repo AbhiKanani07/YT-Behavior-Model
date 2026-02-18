@@ -15,6 +15,15 @@ def test_health() -> None:
     assert response.json() == {"status": "ok"}
 
 
+def test_root() -> None:
+    client = TestClient(app)
+    response = client.get("/")
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["message"] == "API is running"
+    assert payload["docs"] == "/docs"
+
+
 def test_redis_ping() -> None:
     app.dependency_overrides[get_redis] = lambda: FakeRedis()
     client = TestClient(app)
